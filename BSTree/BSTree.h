@@ -28,6 +28,7 @@ class BSTree
         ~BSTree();
 
         size_t size();
+        const BSNode<T>* getRoot(); // 获取根节点
         void insert(T key); // 插入指定元素
         void destory();
         void inOrder(std::vector<T> &vec); // 中序遍历
@@ -35,6 +36,11 @@ class BSTree
         BSNode<T>* search_recursion(const T key); // 查找指定元素的节点(递归)
         BSNode<T>* search_iterator(const T key); // 查找指定元素的节点(非递归)
         void remove(const T key); // 删除key节点
+        BSNode<T>* maxNode();
+        BSNode<T>* minNode();
+        T predecessor(const T key);
+        T successor(const T key);
+
     protected:
 
     private:
@@ -45,6 +51,10 @@ class BSTree
         void postOrder(std::vector<T> &vec, const BSNode<T>* const p);
         BSNode<T>* search(BSNode<T>* const p, const T key);
         void remove(BSNode<T>* &p); // 删除节点
+        BSNode<T>* maxNode(BSNode<T>* p); // 以p节点为根节点的子树最大值
+        BSNode<T>* minNode(BSNode<T>* p); // 以p节点为根节点的子树最小值
+        BSNode<T>* predecessor(const BSNode<T>* p); // 节点的前驱(节点的左子树中最大节点)
+        BSNode<T>* successor(const BSNode<T>* p); // 节点的后继(节点的右子树中最小节点)
 };
 
 /* 构造函数 */
@@ -63,6 +73,13 @@ template <typename T>
 size_t BSTree<T>::size()
 {
     return m_size;
+}
+
+/* 获取根节点 */
+template <typename T>
+const BSNode<T>* BSTree<T>::getRoot()
+{
+    return root;
 }
 
 /* 插入指定元素的节点 */
@@ -186,6 +203,75 @@ BSNode<T>* BSTree<T>::search(BSNode<T>* const p, const T key)
         return p;
 }
 
+/* 节点的前驱节点 */
+template <typename T>
+T BSTree<T>::predecessor(const T key)
+{
+    BSNode<T>* node = search_iterator(key);
+    if(node != nullptr)
+    {
+        BSNode<T>* pre = predecessor(node);
+        if(pre != nullptr)
+            return pre->value;
+    }
+}
+template <typename T>
+BSNode<T>* BSTree<T>::predecessor(const BSNode<T>* p)
+{
+    // 节点p有左孩子,左孩子中的最大值
+    BSNode<T>* tmp;
+    tmp = const_cast<BSNode<T>*>(p);
+    if(tmp->lchild != nullptr)
+    {
+        return maxNode(tmp->lchild);
+    }
+    BSNode<T>* node = p->parent;
+    if(node != nullptr && node->rchild == p)
+    {
+        // p是右孩子
+        return node;
+    }
+    if(node != nullptr && node->lchild == p)
+    {
+        // p是左孩子
+        if(node->parent != nullptr && node->parent->rchild == node)
+            return node->parent;
+    }
+
+    return nullptr;
+}
+
+/* 节点的后继节点 */
+template <typename T>
+T BSTree<T>::successor(const T key)
+{
+    BSNode<T>* node = search_iterator(key);
+    if(node != nullptr)
+    {
+        BSNode<T>* succ = successor(node);
+        if(succ != nullptr)
+            return succ->value;
+    }
+}
+template <typename T>
+BSNode<T>* BSTree<T>::successor(const BSNode<T>* p)
+{
+    // 节点p有右孩子
+    if(p->rchild != nullptr)
+        return minNode(p->rchild);
+
+    BSNode<T>* pre = p->parent;
+    if(pre != nullptr && pre->lchild == p)
+        return pre;
+    if(pre != nullptr && pre->rchild == p)
+    {
+        if(pre->parent != nullptr && pre->parent->lchild == pre)
+            return pre->parent;
+    }
+
+    return nullptr;
+}
+
 /* 删除节点 */
 /* 删除节点 */
 template <typename T>
@@ -288,23 +374,81 @@ void BSTree<T>::destory(BSNode<T>* &p)
     }
 }
 
+/* 查找最大值节点 */
+template <typename T>
+BSNode<T>* BSTree<T>::maxNode()
+{
+    return maxNode(root);
+}
+template <typename T>
+BSNode<T>* BSTree<T>::maxNode(BSNode<T>* p)
+{
+    BSNode<T>* node = p;
+    if(node != nullptr)
+    {
+        if(node->rchild == nullptr)
+            return node;
+        else{
+            while(node->rchild != nullptr)
+                node = node->rchild;
+        }
+    }
+    return node;
+}
+
+/* 查找最小值节点 */
+template <typename T>
+BSNode<T>* BSTree<T>::minNode()
+{
+    return minNode(root);
+}
+template <typename T>
+BSNode<T>* BSTree<T>::minNode(BSNode<T>* p)
+{
+    BSNode<T>* node = p;
+    if(node != nullptr)
+    {
+        if(node->lchild == nullptr)
+            return node;
+        else{
+            while(node->lchild != nullptr)
+                node = node->lchild;
+        }
+    }
+    return node;
+}
+
 }
 #endif // BSTREE_H
 
 /*********************************************************************
 void testBSTree()
 {
-    cout << "\n\n--------  测试BSTree类  START  --------\n\n";
-    int nums[9] = {3, 5, 7, 6, 1, 8, 10, 2, 11};
+   cout << "\n\n--------  测试BSTree类  START  --------\n\n";
+    int nums[10] = {3, 5, 4, 7, 6, 1, 8, 10, 2, 11};
     BSTree<int> tree;
-    for(int i = 0; i < 9; i++)
+    for(int i = 0; i < 10; i++)
         tree.insert(nums[i]);
     vector<int> vec;
     tree.inOrder(vec);
     for(int i:vec)
         cout << i << endl;
 
+    BSNode<int>* minnode = tree.minNode();
+    cout << "MIN NODE: " << minnode->value << endl;
+    BSNode<int>* maxnode = tree.maxNode();
+    cout << "MAX NODE: " << maxnode->value << endl;
+
+    for(int key:vec){
+        if(key != tree.minNode()->value)
+            cout << key << "的前驱节点: " << tree.predecessor(key) << endl;
+        if(key != tree.maxNode()->value)
+            cout << key << "的后继节点: " << tree.successor(key) << endl;
+    }
+
     bool rmagain = true;
+    cout << "执行删除操作?(YES:1 NO:0) " << endl;
+    cin >> rmagain;
     while(1 && rmagain){
         cout << "remove x: ";
         int x;
