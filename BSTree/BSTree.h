@@ -157,13 +157,13 @@ BSNode<T>* BSTree<T>::search_iterator(const T key)
     {
         if(node->value > key)
             node = node->lchild;
-        if(node->value < key)
+        else if(node->value < key)
             node = node->rchild;
-        if(node->value == key) // 找到key节点
+        else if(node->value == key) // 找到key节点
             return node;
     }
 
-    return nullptr;
+    return node;
 }
 // 2. 递归
 template <typename T>
@@ -209,17 +209,26 @@ void BSTree<T>::remove(BSNode<T>* &p)
         BSNode<T>* child_root;
         if(left != nullptr && right != nullptr)
         {
-            // 被删除节点左右子树都存在
-            // 被删节点右子树代替被删除节点
-            // 被删除节点左子树移到被删除节点右子树的最左端节点
+            // 删除节点左右子树都存在
+            // 删节点右子树中最左端节点的值(最小值)替代删除节点的值
+            // 删除该最小值节点
             BSNode<T>* tmp = right;
             while(tmp->lchild != nullptr)
             {
                 tmp = tmp->lchild;
             }
-            tmp->lchild = left;
-            left->parent = tmp;
-            child_root = right;
+            if(tmp == right){
+                // 最小值节点是删除节点的右节点
+                p->value = tmp->value;
+                p->rchild = tmp->rchild;
+                tmp->rchild->parent = p;
+            }
+            else{
+                p->value = tmp->value;
+                tmp->parent->lchild = tmp->rchild;
+            }
+            delete tmp;
+            return;
         }
         else if(left != nullptr)
         {
@@ -286,17 +295,17 @@ void BSTree<T>::destory(BSNode<T>* &p)
 void testBSTree()
 {
     cout << "\n\n--------  测试BSTree类  START  --------\n\n";
-    int nums[8] = {3, 5, 7, 6, 1, 10, 2, 11};
+    int nums[9] = {3, 5, 7, 6, 1, 8, 10, 2, 11};
     BSTree<int> tree;
-    for(int i = 0; i < 8; i++)
+    for(int i = 0; i < 9; i++)
         tree.insert(nums[i]);
     vector<int> vec;
     tree.inOrder(vec);
     for(int i:vec)
         cout << i << endl;
 
-    bool rmend;
-    while(!rmend){
+    bool rmagain = true;
+    while(1 && rmagain){
         cout << "remove x: ";
         int x;
         cin >> x;
@@ -304,16 +313,19 @@ void testBSTree()
         tree.remove(x);
         tree.inOrder(vec);
         for(int i:vec)
-            cout << i << endl;
-        cout << "是否结束删除?(YES:1 NO: 0)" << endl;
-        cin >> rmend;
+            cout << i << " ";
+        cout << endl;
+        cout << "继续?(YES:1 NO: 0)" << endl;
+        cin >> rmagain;
     }
-    BSNode<int> *p;
-    if( (p = tree.search_iterator(5)) != nullptr);
+    BSNode<int> *p = nullptr;
+    p = tree.search_iterator(5);
+    if( p != nullptr)
         cout << "p: " << p->value << endl;
 
     cout << "tree size:" << tree.size() << endl;
 
     cout << "\n\n--------  测试BSTree类 END      --------\n\n";
 }
+
 *********************************************************************/
